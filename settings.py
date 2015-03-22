@@ -115,7 +115,10 @@ class Grouping(object):
 
     def dirname_for(self, subreddit):
         if self.subdir_per_subreddit:
-            return os.path.join(self.name, subreddit.name)
+            if "+" in subreddit.name:
+                return "Multireddit"
+            else:
+                return os.path.join(self.name, subreddit.name)
         else:
             return self.name
         

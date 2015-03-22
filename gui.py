@@ -18,6 +18,7 @@ import itertools
 
 SELECTION_COLOR = '#9999ff'
 BLANK_COLOR = '#ffffff'
+DEFAULT_NUMBER_OF_FILES = 5
 
 def gui(fn):
     @wraps(fn)
@@ -41,20 +42,9 @@ class ScraperWindow(object):
 
     def start_timer(self):
         self.prev_state = self.state.tuple()
-        self.prev_entry = ''
         self.root.after(100, self.timer)
 
     def timer(self):
-        if self.number_of_files_entry.get() != self.prev_entry:
-            num = self._int_in_entry(self.number_of_files_entry)
-            if num is not None:
-                self.subreddit.num_files = num
-        self._entry_update(self.number_of_files_entry, self.subreddit.num_files if
-                           self.subreddit else '')
-
-        self.prev_entry = self.number_of_files_entry.get()
-
-        
         self.grouping_listbox.selection_clear(0, Tkinter.END)
         self.subreddit_listbox.selection_clear(0, Tkinter.END)
         self.file_types_listbox.selection_clear(0, Tkinter.END)
@@ -78,24 +68,21 @@ class ScraperWindow(object):
         self.root.geometry("%dx%d+%d+%d" % (rootsize + (x, y)))
 
     def scrape_all(self, timeframe='day', limits=None):
-        self._scrapes(None, None, timeframe=timeframe, limits=limits)
+        self._scrapes(None, None, timeframe=timeframe, limits=self._get_number_of_files_to_fetch())
 
     def scrape_current_sub(self, timeframe='day', limits=None):
         if self.subreddit:
-            self._scrapes([self.subreddit.name], None, timeframe=timeframe,
-                          limits=limits)
+            self._scrapes([self.subreddit.name], None, timeframe=timeframe, limits=self._get_number_of_files_to_fetch())
         else:
             tkMessageBox.askokcancel("", "Please select a subreddit to scrape.")
 
     def scrape_current_dir(self, timeframe='day', limits=None):
         if self.grouping:
-            self._scrapes(None, [self.grouping.name], timeframe=timeframe,
-                          limits=limits)
+            self._scrapes(None, [self.grouping.name], timeframe=timeframe, limits=self._get_number_of_files_to_fetch())
         else:
             tkMessageBox.askokcancel("", "Please select a directory to scrape.")
             
-    def _scrapes(self, include_sub, include_dir, expose=True, alert_when_done=True,
-                 timeframe='day', limits=None):
+    def _scrapes(self, include_sub, include_dir, expose=True, alert_when_done=True, timeframe='day', limits=None):
         try:
             count = 0
             for x in scrape.scrape(self.settings, include_sub=include_sub, include_dir=include_dir,
@@ -202,19 +189,20 @@ class ScraperWindow(object):
         pane.grid(row=0, column=1)
 
     def add_details_pane(self, root):
-        pane = Tkinter.Frame(root, width=500)
+        pane = Tkinter.Frame(root, width=50)
         # Subreddit name
         self.subreddit_name_label = Tkinter.Label(pane, text='', anchor=Tkinter.N)
         self.subreddit_name_label.grid(row=0, column=0)
 
         # Number of files to download (INC/DEC)
-        row_1_frame = Tkinter.Frame(pane)
+        row_1_frame = Tkinter.Frame()
         
         self.number_of_files_label = Tkinter.Label(row_1_frame, text='Files to Download:')
         self.number_of_files_label.pack(side=Tkinter.LEFT)
 
-        self.number_of_files_entry = Tkinter.Entry(row_1_frame, width=3)
-        self.number_of_files_entry.pack(side=Tkinter.LEFT)
+        self.number_of_files_entry = Tkinter.Entry(row_1_frame, width=5)
+        self.number_of_files_entry.pack(side=Tkinter.RIGHT)
+        self._set_number_of_files_to_fetch(DEFAULT_NUMBER_OF_FILES)
 
         row_1_frame.grid(row=1, column=0)
 
@@ -335,19 +323,21 @@ class ScraperWindow(object):
 
         ## Details Frame
         if self.subreddit is not None:
-            self.subreddit_name_label.config(text='/r/'+self.state.subreddit)
-            #self._entry_update(self.number_of_files_entry, self.ubreddit.num_files)
+            if "+" in self.state.subreddit:
+                self.subreddit_name_label.config(text='/r/'+self.state.subreddit[:self.state.subreddit.index("+")] + " ... Multireddit")
+            else:
+                self.subreddit_name_label.config(text='/r/'+self.state.subreddit)
             desired_filetypes = self.subreddit.file_types
             self._listbox_update(self.file_types_listbox, desired_filetypes)
         else:
             self.subreddit_name_label.config(text='')
             self.filetype = None
-            #self._entry_update(self.number_of_files_entry, '')
             self._listbox_update(self.file_types_listbox, ['<Extensions>'])
 
         ## Color
         for i in xrange(self.file_types_listbox.size()):
             self.file_types_listbox.itemconfig(i, bg=BLANK_COLOR)
+        
         if self.filetype:
             index = self.file_types_listbox.get(0, Tkinter.END).index(self.filetype)
             self.file_types_listbox.itemconfig(index, bg=SELECTION_COLOR)
@@ -362,18 +352,19 @@ class ScraperWindow(object):
         for item in to_add:
             listbox.insert(Tkinter.END, item)
 
-    def _entry_update(self, entry, desired_text):
-        desired_text = str(desired_text)
-        if entry.get() != desired_text:
-            entry.delete(0, Tkinter.END)
-            entry.insert(0, desired_text)
+    def _set_number_of_files_to_fetch(self, value):
+        if type(value) is str:
+            value = int(value)
 
-    def _int_in_entry(self, entry):
-        contents = entry.get()
-        if contents == '': return 0
-        contents = ''.join(c for c in contents if c in '0123456789.')
-        if contents == '': return None
-        return int(float(contents))
+        self.number_of_files_entry.delete(0, Tkinter.END)
+        self.number_of_files_entry.insert(0, value)
+
+    def _get_number_of_files_to_fetch(self):
+        print "getting"
+        value = self.number_of_files_entry.get()
+        if type(value) is str:
+            return int(value)
+        return value
 
     @gui
     def add_subreddit(self):
@@ -393,7 +384,7 @@ class ScraperWindow(object):
         if tkMessageBox.askokcancel("Added Subreddit", "Successfully added /r/%s!"% self.subreddit.name +
                                     " Scrape this subreddit's history now?"):
             
-            self.scrape_current_sub(timeframe='all', limits=20)
+            self.scrape_current_sub(timeframe='all', limits=self._number_of_files_to_fetch())
             
     @gui
     def del_subreddit(self):

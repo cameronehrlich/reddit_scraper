@@ -79,13 +79,12 @@ def get_submissions(subred, limit, timeframe):
 
 def scrape(settings, include_sub=None, include_dir=None, timeframe='day', limits=None):
     r = praw.Reddit(user_agent=settings.user_agent)
+    grouping_index = 0
     for grouping in settings.groupings:
-        if ((include_dir is not None and grouping.name not in include_dir) or
-            not grouping.enabled):
+        if ((include_dir is not None and grouping.name not in include_dir) or not grouping.enabled):
             continue
         for subreddit in grouping.subreddits:
-            if ((include_sub is not None and subreddit.name not in include_sub) or
-                not subreddit.enabled):
+            if ((include_sub is not None and subreddit.name not in include_sub) or not subreddit.enabled):
                 continue
             dirname = grouping.dirname_for(subreddit)
             if not os.path.exists(dirname):
@@ -93,13 +92,11 @@ def scrape(settings, include_sub=None, include_dir=None, timeframe='day', limits
             yield dirname
 
             extensions = set(subreddit.file_types)
-            limit = subreddit.num_files if limits is None else limits
             subred = r.get_subreddit(subreddit.name)
-            submissions = get_submissions(subred, limit, timeframe)
+            submissions = get_submissions(subred, limits, timeframe)
 
             count = 0
             for sub in submissions:
-                url = sub.url
                 if any(sub.url.lower().endswith(ext.lower()) for ext in extensions):
                     fetch_image(sub, dirname)
                     count += 1
