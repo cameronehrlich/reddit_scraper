@@ -15,9 +15,12 @@ which subreddits to scrape from, and which directories to write to.
 The GUI needs a lot of work but this is essentially usable. 
 
 Uses Python Reddit API Wrapper: https://github.com/praw-dev/praw
-`pip install praw`
 
-`pip install requests`
+```% pip install praw```
+
+One other dependancy:
+
+```% pip install requests```
 
 Contact me: chrisbarker@cmu.edu
 
