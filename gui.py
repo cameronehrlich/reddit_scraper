@@ -85,10 +85,10 @@ class ScraperWindow(object):
     def _scrapes(self, include_sub, include_dir, expose=True, alert_when_done=True, timeframe='day', limits=None):
         try:
             count = 0
-            for x in scrape.scrape(self.settings, include_sub=include_sub, include_dir=include_dir,
-                                   timeframe=timeframe, limits=limits):
+            for x in scrape.scrape(self.settings, include_sub=include_sub, include_dir=include_dir, timeframe=timeframe, limits=limits):
                 if isinstance(x, int):
                     count += x
+                    print count
                     continue
                 if expose:
                     reveal(x)
@@ -360,7 +360,6 @@ class ScraperWindow(object):
         self.number_of_files_entry.insert(0, value)
 
     def _get_number_of_files_to_fetch(self):
-        print "getting"
         value = self.number_of_files_entry.get()
         if type(value) is str:
             return int(value)
@@ -383,8 +382,7 @@ class ScraperWindow(object):
     def ask_for_all_time(self):
         if tkMessageBox.askokcancel("Added Subreddit", "Successfully added /r/%s!"% self.subreddit.name +
                                     " Scrape this subreddit's history now?"):
-            
-            self.scrape_current_sub(timeframe='all', limits=self._number_of_files_to_fetch())
+            self.scrape_current_sub(timeframe='all', limits=self._get_number_of_files_to_fetch())
             
     @gui
     def del_subreddit(self):

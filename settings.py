@@ -168,7 +168,6 @@ class Grouping(object):
 class Subreddit(object):
     def __init__(self, data):
         self.data = {'subreddit_name': None,
-                     'num_files': 5,
                      'enabled': True,
                      'file_types': ['JPG', 'PNG', 'GIF'],
                      'last_scraped': 'Never'}
@@ -183,12 +182,6 @@ class Subreddit(object):
     @property
     def enabled(self):
         return self.data['enabled']
-    @property
-    def num_files(self):
-        return self.data['num_files']
-    @num_files.setter
-    def num_files(self, val):
-        self.data['num_files'] = val
     
     @property
     def file_types(self):
